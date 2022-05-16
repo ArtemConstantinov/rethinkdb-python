@@ -31,9 +31,11 @@ from rethinkdb.errors import (
 )
 from rethinkdb.net import Connection as ConnectionBase
 from rethinkdb.net import Cursor, Query, Response, maybe_profile
+from rethinkdb.asyncio_net.asyncio_adapter import get_adapter
 
 __all__ = ["Connection"]
 
+ASYNC_ADAPTER = get_adapter()
 
 pResponse = ql2_pb2.Response.ResponseType
 pQuery = ql2_pb2.Query.QueryType
@@ -199,7 +201,7 @@ class ConnectionInstance(object):
                 ssl_context.check_hostname = True  # redundant with match_hostname
                 ssl_context.load_verify_locations(self._parent.ssl["ca_certs"])
 
-            self._streamreader, self._streamwriter = yield from asyncio.open_connection(
+            self._streamreader, self._streamwriter = yield from ASYNC_ADAPTER.open_connection(
                 self._parent.host,
                 self._parent.port,
                 loop=self._io_loop,
@@ -227,10 +229,10 @@ class ConnectionInstance(object):
                         break
                     # This may happen in the `V1_0` protocol where we send two requests as
                     # an optimization, then need to read each separately
-                    if request is not "":
+                    if request != "":
                         self._streamwriter.write(request)
 
-                    response = yield from asyncio.wait_for(
+                    response = yield from ASYNC_ADAPTER.wait_for(
                         _read_until(self._streamreader, b"\0"),
                         timeout,
                         loop=self._io_loop,
@@ -254,7 +256,7 @@ class ConnectionInstance(object):
 
         # Start a parallel function to perform reads
         #  store a reference to it so it doesn't get destroyed
-        self._reader_task = asyncio.ensure_future(self._reader(), loop=self._io_loop)
+        self._reader_task = ASYNC_ADAPTER.ensure_future(self._reader(), loop=self._io_loop)
         return self._parent
 
     def is_open(self):

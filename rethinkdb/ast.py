@@ -20,13 +20,20 @@ __all__ = ["expr", "RqlQuery", "ReQLEncoder", "ReQLDecoder", "Repl"]
 
 import base64
 import binascii
-import collections
 import datetime
 import json
+import sys
 import threading
 
 from rethinkdb import ql2_pb2
 from rethinkdb.errors import QueryPrinter, ReqlDriverCompileError, ReqlDriverError, T
+
+if sys.version_info < (3, 3):
+    # python < 3.3 uses collections
+    import collections
+else:
+    # but collections is deprecated from python >= 3.3
+    import collections.abc as collections
 
 P_TERM = ql2_pb2.Term.TermType
 

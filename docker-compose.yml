@@ -1,0 +1,24 @@
+version: '3.4'
+networks:
+    rdb:
+        name: ReDB
+
+services:
+    rethinkdb:
+        image: rethinkdb:2.4.2-bullseye-slim
+        container_name: rethink_db
+        restart: unless-stopped
+        volumes:
+            - ./tmp:/data
+        networks:
+            - rdb
+        ports:
+            - "127.0.0.1:8080:8080" # admin panel port
+            - "127.0.0.1:28015:28015" # API port
+        deploy:
+            resources:
+                limits:
+                    cpus: "2.5"
+                    memory: "2g"
+                reservations:
+                    memory: "1g"
